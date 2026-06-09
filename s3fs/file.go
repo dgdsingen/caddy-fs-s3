@@ -80,7 +80,7 @@ func (f *file) open() error {
 		Key:    &f.name,
 	}
 	if f.offset > 0 {
-		in.Range = ptr(fmt.Sprintf("bytes=%d-", f.offset))
+		in.Range = new(fmt.Sprintf("bytes=%d-", f.offset))
 		if f.eTag != "" {
 			in.IfMatch = &f.eTag
 		}
@@ -163,12 +163,8 @@ func (fi fileInfo) Size() int64        { return fi.size }
 func (fi fileInfo) Mode() fs.FileMode  { return fi.mode }
 func (fi fileInfo) ModTime() time.Time { return fi.modTime }
 func (fi fileInfo) IsDir() bool        { return fi.mode.IsDir() }
-func (fi fileInfo) Sys() interface{}   { return nil }
+func (fi fileInfo) Sys() any           { return nil }
 
 type eofReader struct{}
 
 func (eofReader) Read([]byte) (int, error) { return 0, io.EOF }
-
-func ptr[T any](v T) *T {
-	return &v
-}

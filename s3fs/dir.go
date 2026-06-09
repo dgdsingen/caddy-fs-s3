@@ -208,13 +208,6 @@ type dirEntry struct {
 func (de dirEntry) Type() fs.FileMode          { return de.Mode().Type() }
 func (de dirEntry) Info() (fs.FileInfo, error) { return de.fileInfo, nil }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func derefInt64(n *int64) int64 {
 	if n != nil {
 		return *n
