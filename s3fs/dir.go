@@ -124,8 +124,11 @@ func (d *dir) readNext() error {
 		}
 	}
 
-	d.marker = out.NextMarker
-	d.done = out.IsTruncated != nil && !(*out.IsTruncated)
+	truncated := out.IsTruncated != nil && *out.IsTruncated
+	d.done = !truncated
+	if truncated {
+		d.marker = nextMarker(out)
+	}
 
 	if d.dirs == nil {
 		d.dirs = make(map[dirEntry]bool)
@@ -176,13 +179,9 @@ func (d *dir) readNext() error {
 
 func (d *dir) mergeDirFiles() {
 	if d.buf == nil {
-		// according to fs docs ReadDir should never return nil slice,
-		// so we set it here.
 		d.buf = []fs.DirEntry{}
 	}
 
-	// we need a current len for sort.Search that doesn't change; otherwise
-	// we could not append to the same slice.
 	l := len(d.buf)
 	for de, used := range d.dirs {
 		if used {
@@ -211,6 +210,27 @@ type dirEntry struct {
 
 func (de dirEntry) Type() fs.FileMode          { return de.Mode().Type() }
 func (de dirEntry) Info() (fs.FileInfo, error) { return de.fileInfo, nil }
+
+func nextMarker(out *s3.ListObjectsOutput) *string {
+	if out.NextMarker != nil && *out.NextMarker != "" {
+		return out.NextMarker
+	}
+
+	var last string
+	if n := len(out.Contents); n > 0 && out.Contents[n-1].Key != nil {
+		last = *out.Contents[n-1].Key
+	}
+	if n := len(out.CommonPrefixes); n > 0 && out.CommonPrefixes[n-1].Prefix != nil {
+		if p := *out.CommonPrefixes[n-1].Prefix; p > last {
+			last = p
+		}
+	}
+
+	if last == "" {
+		return nil
+	}
+	return &last
+}
 
 func derefInt64(n *int64) int64 {
 	if n != nil {
