@@ -1,0 +1,21 @@
+{
+	admin off
+	auto_https off
+	filesystem s3fs s3 {
+		bucket {$S3_BUCKET}
+		region {$AWS_REGION}
+	}
+}
+
+:8000 {
+	log
+	handle /health {
+		log_skip
+		respond 200
+	}
+	handle {
+		fs s3fs
+		try_files {path} {path}/index.html /index.html
+		file_server
+	}
+}
