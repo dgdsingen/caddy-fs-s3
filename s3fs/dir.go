@@ -153,6 +153,10 @@ func (d *dir) readNext() error {
 			continue
 		}
 
+		if *o.Key == name {
+			continue
+		}
+
 		d.buf = append(d.buf, dirEntry{
 			fileInfo: fileInfo{
 				name:    path.Base(*o.Key),
